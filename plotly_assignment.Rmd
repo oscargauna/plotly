@@ -1,0 +1,101 @@
+---
+title: "Significant Earthquakes 1900-2020"
+author: "Oscar Gauna"
+date: "September 24, 2020"
+output: ioslides_presentation
+---
+<style>
+p.caption {
+  font-size: 0.6em;
+}
+</style>
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Summary
+
+The Significant Earthquake Database contains information on destructive earthquakes from 2150 B.C. to the present that meet at least one of the following criteria: Moderate damage (approximately $1 million or more), 10 or more deaths, Magnitude 7.5 or greater, Modified Mercalli Intensity X or greater, or the earthquake generated a tsunami. In this report I present the data between 1900 and 2020.
+
+## Significant Earthquakes 1900-2020
+##### Hover over the dots for location info or click the region in the legend to add/remove dots.
+```{r plot, echo=FALSE, message=FALSE, warning=FALSE, fig.cap='Data source: National Geophysical Data Center / World Data Service (NGDC/WDS): Significant Earthquake Database. National Geophysical Data Center, NOAA. doi:10.7289/V5TD9V7K'}
+library(dplyr)
+library(plotly)
+
+data <- read.csv("Worldwide-Earthquake-database.csv")
+region_code <- c(10,15,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170)
+region_name <- c("Central, Western and S. Africa","Northern Africa","Antarctica",
+    "East Asia","Central Asia and Caucasus","Kamchatka and Kuril Islands",
+    "S. and SE. Asia and Indian Ocean","Atlantic Ocean","Bering Sea","Caribbean",
+    "Central America","Eastern Europe","Northern and Western Europe","Southern Europe",
+    "Middle East","North America and Hawaii","South America","Central and South Pacific")
+
+regions <- data.frame(code=region_code, name=region_name)
+
+data_small <- data %>%
+    select(YEAR, REGION_CODE, LOCATION_NAME, EQ_PRIMARY) %>%
+        filter(YEAR > 1899 & EQ_PRIMARY != "NA" & REGION_CODE != "NA") %>%
+            mutate(REGION_CODE=factor(REGION_CODE))
+
+new <- data_small
+new[] <- lapply(data_small, function(x) regions$name[match(x, regions$code)])
+
+data_small$REGION_CODE <- new$REGION_CODE
+data_small$hover <- with(data_small, paste(LOCATION_NAME, '<br>', "YEAR:", YEAR, '<br>', "MAGNITUDE:", EQ_PRIMARY))
+
+title <- list(text="SIGNIFICANT EARTHQUAKES 1900-2020")
+legend <- list(title=list(text="REGION"))
+y <- list(title = "MAGNITUDE")
+
+fig <- plot_ly(data_small, x=~YEAR, y=~EQ_PRIMARY, type="scatter", mode="markers", color=~REGION_CODE, text=~hover)
+fig <- fig %>% layout(title=title, yaxis=y, legend=legend)
+fig
+```
+
+## Appendix (Code)
+```{css, echo = FALSE}
+.tiny {
+  font-size: 8px;
+  line-height: 1.5;
+}
+```
+```{r class.source="tiny", echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+library(dplyr)
+library(plotly)
+
+#Read source data and define region codes
+data <- read.csv("Worldwide-Earthquake-database.csv")
+region_code <- c(10,15,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170)
+region_name <- c("Central, Western and S. Africa","Northern Africa","Antarctica",
+    "East Asia","Central Asia and Caucasus","Kamchatka and Kuril Islands",
+    "S. and SE. Asia and Indian Ocean","Atlantic Ocean","Bering Sea","Caribbean",
+    "Central America","Eastern Europe","Northern and Western Europe","Southern Europe",
+    "Middle East","North America and Hawaii","South America","Central and South Pacific")
+
+regions <- data.frame(code=region_code, name=region_name)
+
+#Subset the fields of interest
+data_small <- data %>%
+    select(YEAR, REGION_CODE, LOCATION_NAME, EQ_PRIMARY) %>%
+        filter(YEAR > 1899 & EQ_PRIMARY != "NA" & REGION_CODE != "NA") %>%
+            mutate(REGION_CODE=factor(REGION_CODE))
+
+#Translate region codes to names
+new <- data_small
+new[] <- lapply(data_small, function(x) regions$name[match(x, regions$code)])
+
+data_small$REGION_CODE <- new$REGION_CODE
+
+#Create hovering text
+data_small$hover <- with(data_small, paste(LOCATION_NAME, '<br>', "YEAR:", YEAR, '<br>', "MAGNITUDE:", EQ_PRIMARY))
+
+#Create plot
+title <- list(text="SIGNIFICANT EARTHQUAKES 1900-2020")
+legend <- list(title=list(text="REGION"))
+y <- list(title = "MAGNITUDE")
+
+fig <- plot_ly(data_small, x=~YEAR, y=~EQ_PRIMARY, type="scatter", mode="markers", color=~REGION_CODE, text=~hover)
+fig <- fig %>% layout(title=title, yaxis=y, legend=legend)
+fig
+```
